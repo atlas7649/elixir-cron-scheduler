@@ -49,4 +49,31 @@ defmodule CronyxTest do
     assert {:ok, datetime} = Cronyx.next_from_now("* * * * *")
     assert DateTime.compare(datetime, DateTime.utc_now()) in [:gt, :eq]
   end
+
+  test "treats weekday 7 as Sunday" do
+    start = ~N[2024-01-06 00:00:00]
+    assert {:ok, ~N[2024-01-07 00:00:00]} = Cronyx.next("0 0 * * 7", start)
+  end
+
+  test "supports case-insensitive names" do
+    assert {:ok, _cron} = Cronyx.parse("30 9 * JuN MoN")
+  end
+
+  test "computes a stepped range" do
+    start = ~N[2024-01-01 00:00:00]
+    assert {:ok, ~N[2024-01-01 00:01:00]} = Cronyx.next("1-10/3 * * * *", start)
+  end
+
+  test "rejects a descending range" do
+    assert {:error, :invalid_field} = Cronyx.parse("5-1 * * * *")
+  end
+
+  test "reports no occurrence for an impossible date" do
+    assert {:error, :no_occurrence_within_range} = Cronyx.next("0 0 31 2 *", ~N[2024-01-01 00:00:00])
+  end
+
+  test "valid? identifies valid and invalid expressions" do
+    assert Cronyx.valid?("*/15 * * * *")
+    refute Cronyx.valid?("not a cron")
+  end
 end

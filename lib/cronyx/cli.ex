@@ -39,10 +39,6 @@ defmodule Cronyx.CLI do
       {:error, _reason} ->
         IO.puts(:stderr, "error: invalid cron expression or datetime")
         System.halt(1)
-
-      {:error, reason} ->
-        IO.puts(:stderr, "error: #{inspect(reason)}")
-        System.halt(1)
     end
   end
 

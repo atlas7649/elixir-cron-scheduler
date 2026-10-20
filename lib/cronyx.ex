@@ -160,6 +160,7 @@ defmodule Cronyx do
     end
   end
 
+  @doc "Returns whether the expression is a valid five-field cron expression."
   @spec valid?(String.t()) :: boolean()
   def valid?(expression) when is_binary(expression) do
     match?({:ok, _cron}, parse(expression))
@@ -264,26 +265,22 @@ defmodule Cronyx do
     restricted = field not in ["*", "?"]
     parts = String.split(field, ",")
 
-    if parts == [] do
-      {:error, :empty_field}
-    else
-      Enum.reduce_while(parts, {:ok, MapSet.new()}, fn part, {:ok, acc} ->
-        case parse_part(part, min, max, names) do
-          {:ok, values} -> {:cont, {:ok, MapSet.union(acc, values)}}
-          {:error, reason} -> {:halt, {:error, reason}}
-        end
-      end)
-      |> case do
-        {:ok, set} ->
-          if MapSet.size(set) == 0 do
-            {:error, :empty_field}
-          else
-            {:ok, {set, restricted}}
-          end
-
-        error ->
-          error
+    Enum.reduce_while(parts, {:ok, MapSet.new()}, fn part, {:ok, acc} ->
+      case parse_part(part, min, max, names) do
+        {:ok, values} -> {:cont, {:ok, MapSet.union(acc, values)}}
+        {:error, reason} -> {:halt, {:error, reason}}
       end
+    end)
+    |> case do
+      {:ok, set} ->
+        if MapSet.size(set) == 0 do
+          {:error, :empty_field}
+        else
+          {:ok, {set, restricted}}
+        end
+
+      error ->
+        error
     end
   end
 
