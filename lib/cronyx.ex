@@ -121,7 +121,27 @@ defmodule Cronyx do
 
       case next_naive(cron, naive) do
         {:ok, result_naive} ->
-          case DateTime.from_naive(result_naive, datetime.time_zone) do
+          conversion =
+            if datetime.time_zone == "Etc/UTC" and datetime.utc_offset != 0 do
+              {:ok,
+               %DateTime{
+                 year: result_naive.year,
+                 month: result_naive.month,
+                 day: result_naive.day,
+                 hour: result_naive.hour,
+                 minute: result_naive.minute,
+                 second: 0,
+                 microsecond: {0, 0},
+                 time_zone: datetime.time_zone,
+                 utc_offset: datetime.utc_offset,
+                 std_offset: datetime.std_offset,
+                 calendar: result_naive.calendar
+               }}
+            else
+              DateTime.from_naive(result_naive, datetime.time_zone)
+            end
+
+          case conversion do
             {:ok, result} -> {:ok, result}
             {:ambiguous, result, _other} -> {:ok, result}
             {:gap, result, _other} -> {:ok, result}
