@@ -12,7 +12,7 @@ defmodule Cronyx do
 
   Fields may contain `*`, `?`, numbers, ranges (`1-5`), lists (`1,3,5`),
   and steps (`*/2`, `1-10/2`). When both day-of-month and day-of-week are
-  restricted, a date matches if either field matches, following common cron
+  restricted, a date matches if either matches, following common cron
   semantics.
   """
 
@@ -122,7 +122,7 @@ defmodule Cronyx do
       case next_naive(cron, naive) do
         {:ok, result_naive} ->
           conversion =
-            if datetime.time_zone == "Etc/UTC" and datetime.utc_offset != 0 do
+            if fixed_offset_zone?(datetime) do
               {:ok,
                %DateTime{
                  year: result_naive.year,
@@ -384,5 +384,11 @@ defmodule Cronyx do
       _ ->
         :error
     end
+  end
+
+  defp fixed_offset_zone?(%DateTime{} = datetime) do
+    (datetime.time_zone == "Etc/UTC" and datetime.utc_offset != 0) or
+      (is_binary(datetime.time_zone) and
+         Regex.match?(~r/^[+-]\d{2}:\d{2}$/, datetime.time_zone))
   end
 end
