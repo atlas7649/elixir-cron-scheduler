@@ -160,6 +160,15 @@ defmodule Cronyx do
     end
   end
 
+  @spec next_occurrences(String.t(), DateTime.t() | NaiveDateTime.t(), non_neg_integer()) ::
+          {:ok, [DateTime.t() | NaiveDateTime.t()]} | {:error, term()}
+  def next_occurrences(expression, datetime, count \\ 5)
+      when is_binary(expression) and is_integer(count) and count >= 0 do
+    with {:ok, _cron} <- parse(expression) do
+      {:ok, collect_occurrences(expression, datetime, count, [])}
+    end
+  end
+
   @spec next_from_now(String.t()) :: {:ok, DateTime.t()} | {:error, term()}
   def next_from_now(expression) when is_binary(expression) do
     next(expression, DateTime.utc_now())
@@ -184,6 +193,17 @@ defmodule Cronyx do
   @spec valid?(String.t()) :: boolean()
   def valid?(expression) when is_binary(expression) do
     match?({:ok, _cron}, parse(expression))
+  end
+
+  defp collect_occurrences(_expression, _datetime, 0, acc) do
+    Enum.reverse(acc)
+  end
+
+  defp collect_occurrences(expression, datetime, count, acc) do
+    case next(expression, datetime) do
+      {:ok, result} -> collect_occurrences(expression, result, count - 1, [result | acc])
+      {:error, _reason} -> Enum.reverse(acc)
+    end
   end
 
   defp next_naive(cron, datetime) do
