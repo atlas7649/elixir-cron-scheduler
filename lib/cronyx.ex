@@ -113,6 +113,8 @@ defmodule Cronyx do
     end
   end
 
+  def parse(_expression), do: {:error, :invalid_expression}
+
   @spec next(String.t(), DateTime.t() | NaiveDateTime.t()) ::
           {:ok, DateTime.t() | NaiveDateTime.t()} | {:error, term()}
   def next(expression, %DateTime{} = datetime) when is_binary(expression) do
@@ -134,7 +136,7 @@ defmodule Cronyx do
                  microsecond: {0, 0},
                  time_zone: datetime.time_zone,
                  utc_offset: datetime.utc_offset,
-                 std_offset: datetime.std_offset,
+                 std_offset: 0,
                  zone_abbr: datetime.zone_abbr,
                  calendar: result_naive.calendar
                }}
@@ -161,6 +163,8 @@ defmodule Cronyx do
     end
   end
 
+  def next(_expression, _datetime), do: {:error, :invalid_arguments}
+
   @spec next_occurrences(String.t(), DateTime.t() | NaiveDateTime.t(), non_neg_integer()) ::
           {:ok, [DateTime.t() | NaiveDateTime.t()]} | {:error, term()}
   def next_occurrences(expression, datetime, count \\ 5)
@@ -169,6 +173,8 @@ defmodule Cronyx do
       collect_occurrences(expression, datetime, count, [])
     end
   end
+
+  def next_occurrences(_expression, _datetime, _count), do: {:error, :invalid_arguments}
 
   @spec next_from_now(String.t()) :: {:ok, DateTime.t()} | {:error, term()}
   def next_from_now(expression) when is_binary(expression) do
@@ -189,6 +195,8 @@ defmodule Cronyx do
       {:error, _reason} -> false
     end
   end
+
+  def matches?(_expression, _datetime), do: false
 
   @doc "Returns whether the expression is a valid five-field cron expression."
   @spec valid?(String.t()) :: boolean()
@@ -410,6 +418,6 @@ defmodule Cronyx do
   defp fixed_offset_zone?(%DateTime{} = datetime) do
     (datetime.time_zone == "Etc/UTC" and datetime.utc_offset != 0) or
       (is_binary(datetime.time_zone) and
-         Regex.match?(~r/^[+-]\d{2}:\d{2}$/, datetime.time_zone))
+         Regex.match?(~r/^[+-]\d{1,2}:\d{2}$/, datetime.time_zone))
   end
 end
