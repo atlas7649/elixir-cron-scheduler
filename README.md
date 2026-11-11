@@ -25,10 +25,13 @@ Cronyx.matches?("0 9 * * Mon-Fri", ~N[2024-01-02 09:00:00])
 #=> true
 
 {:ok, next} = Cronyx.next_from_now("0 0 * * *")
+
+{:ok, next_runs} = Cronyx.next_occurrences("*/15 * * * *", ~N[2024-01-01 00:00:00], 3)
 ```
 
 `next/2` accepts both `NaiveDateTime` and `DateTime` values. `next_from_now/1`
-uses the current UTC time.
+uses the current UTC time. `next_occurrences/3` returns the requested number
+of upcoming run times.
 
 ## CLI usage
 

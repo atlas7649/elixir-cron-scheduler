@@ -135,6 +135,7 @@ defmodule Cronyx do
                  time_zone: datetime.time_zone,
                  utc_offset: datetime.utc_offset,
                  std_offset: datetime.std_offset,
+                 zone_abbr: datetime.zone_abbr,
                  calendar: result_naive.calendar
                }}
             else
@@ -144,7 +145,7 @@ defmodule Cronyx do
           case conversion do
             {:ok, result} -> {:ok, result}
             {:ambiguous, result, _other} -> {:ok, result}
-            {:gap, result, _other} -> {:ok, result}
+            {:gap, _before, result} -> {:ok, result}
             {:error, reason} -> {:error, reason}
           end
 
@@ -165,7 +166,7 @@ defmodule Cronyx do
   def next_occurrences(expression, datetime, count \\ 5)
       when is_binary(expression) and is_integer(count) and count >= 0 do
     with {:ok, _cron} <- parse(expression) do
-      {:ok, collect_occurrences(expression, datetime, count, [])}
+      collect_occurrences(expression, datetime, count, [])
     end
   end
 
@@ -196,13 +197,13 @@ defmodule Cronyx do
   end
 
   defp collect_occurrences(_expression, _datetime, 0, acc) do
-    Enum.reverse(acc)
+    {:ok, Enum.reverse(acc)}
   end
 
   defp collect_occurrences(expression, datetime, count, acc) do
     case next(expression, datetime) do
       {:ok, result} -> collect_occurrences(expression, result, count - 1, [result | acc])
-      {:error, _reason} -> Enum.reverse(acc)
+      {:error, reason} -> {:error, reason}
     end
   end
 
