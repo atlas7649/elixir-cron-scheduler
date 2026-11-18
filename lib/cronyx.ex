@@ -136,7 +136,7 @@ defmodule Cronyx do
                  microsecond: {0, 0},
                  time_zone: datetime.time_zone,
                  utc_offset: datetime.utc_offset,
-                 std_offset: 0,
+                 std_offset: datetime.std_offset,
                  zone_abbr: datetime.zone_abbr,
                  calendar: result_naive.calendar
                }}
@@ -181,6 +181,8 @@ defmodule Cronyx do
     next(expression, DateTime.utc_now())
   end
 
+  def next_from_now(_expression), do: {:error, :invalid_expression}
+
   @spec matches?(String.t(), DateTime.t() | NaiveDateTime.t()) :: boolean()
   def matches?(expression, %DateTime{} = datetime) when is_binary(expression) do
     case parse(expression) do
@@ -203,6 +205,8 @@ defmodule Cronyx do
   def valid?(expression) when is_binary(expression) do
     match?({:ok, _cron}, parse(expression))
   end
+
+  def valid?(_expression), do: false
 
   defp collect_occurrences(_expression, _datetime, 0, acc) do
     {:ok, Enum.reverse(acc)}
@@ -416,7 +420,8 @@ defmodule Cronyx do
   end
 
   defp fixed_offset_zone?(%DateTime{} = datetime) do
-    (datetime.time_zone == "Etc/UTC" and datetime.utc_offset != 0) or
+    datetime.time_zone == "Etc/UTC" or
+      datetime.time_zone == "UTC" or
       (is_binary(datetime.time_zone) and
          Regex.match?(~r/^[+-]\d{1,2}:\d{2}$/, datetime.time_zone))
   end
