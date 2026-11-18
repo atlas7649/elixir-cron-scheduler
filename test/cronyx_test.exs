@@ -76,4 +76,66 @@ defmodule CronyxTest do
     assert Cronyx.valid?("*/15 * * * *")
     refute Cronyx.valid?("not a cron")
   end
+
+  test "computes multiple occurrences" do
+    start = ~N[2024-01-01 00:00:00]
+
+    assert {:ok,
+            [
+              ~N[2024-01-01 00:15:00],
+              ~N[2024-01-01 00:30:00],
+              ~N[2024-01-01 00:45:00]
+            ]} = Cronyx.next_occurrences("*/15 * * * *", start, 3)
+  end
+
+  test "preserves an offset split across utc_offset and std_offset" do
+    datetime = %DateTime{
+      year: 2024,
+      month: 1,
+      day: 1,
+      hour: 0,
+      minute: 0,
+      second: 0,
+      microsecond: {0, 0},
+      time_zone: "Etc/UTC",
+      utc_offset: 0,
+      std_offset: 3600,
+      zone_abbr: "+01:00",
+      calendar: Calendar.ISO
+    }
+
+    assert {:ok, result} = Cronyx.next("*/15 * * * *", datetime)
+    assert result.utc_offset == 0
+    assert result.std_offset == 3600
+  end
+
+  test "preserves a regex fixed offset" do
+    datetime = %DateTime{
+      year: 2024,
+      month: 1,
+      day: 1,
+      hour: 0,
+      minute: 0,
+      second: 0,
+      microsecond: {0, 0},
+      time_zone: "+02:00",
+      utc_offset: 7200,
+      std_offset: 0,
+      zone_abbr: "+02:00",
+      calendar: Calendar.ISO
+    }
+
+    assert {:ok, result} = Cronyx.next("*/15 * * * *", datetime)
+    assert result.time_zone == "+02:00"
+    assert result.utc_offset == 7200
+    assert result.std_offset == 0
+  end
+
+  test "valid? rejects non-binary input" do
+    refute Cronyx.valid?(123)
+  end
+
+  test "next_from_now rejects non-binary input" do
+    assert {:error, :invalid_expression} = Cronyx.next_from_now(123)
+  end
 end
