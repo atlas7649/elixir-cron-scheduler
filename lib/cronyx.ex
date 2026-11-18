@@ -238,11 +238,17 @@ defmodule Cronyx do
 
     case find_on_date(cron, date, datetime.hour, datetime.minute) do
       {:ok, {hour, minute}} ->
-        {:ok, NaiveDateTime.new!(date, Time.new!(hour, minute, 0))}
+        {:ok,
+         NaiveDateTime.new!(date.year, date.month, date.day, hour, minute, 0, {0, 0},
+           date.calendar)}
 
       :none ->
         next_date = Date.add(date, 1)
-        next_datetime = NaiveDateTime.new!(next_date, ~T[00:00:00])
+
+        next_datetime =
+          NaiveDateTime.new!(next_date.year, next_date.month, next_date.day, 0, 0, 0, {0, 0},
+            next_date.calendar)
+
         search(cron, next_datetime, days + 1)
     end
   end
