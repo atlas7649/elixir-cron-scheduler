@@ -168,7 +168,8 @@ defmodule Cronyx do
   @spec next_occurrences(String.t(), DateTime.t() | NaiveDateTime.t(), non_neg_integer()) ::
           {:ok, [DateTime.t() | NaiveDateTime.t()]} | {:error, term()}
   def next_occurrences(expression, datetime, count \\ 5)
-      when is_binary(expression) and is_integer(count) and count >= 0 do
+      when is_binary(expression) and is_integer(count) and count >= 0 and
+             (is_struct(datetime, DateTime) or is_struct(datetime, NaiveDateTime)) do
     with {:ok, _cron} <- parse(expression) do
       collect_occurrences(expression, datetime, count, [])
     end
